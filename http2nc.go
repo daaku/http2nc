@@ -41,7 +41,7 @@ func DialConnect(w http.ResponseWriter, r *http.Request, addr string) error {
 		return fmt.Errorf("http2nc: %w", err)
 	}
 	tcpc := nc.(*net.TCPConn)
-	defer tcpc.Close() // backup close
+	defer tcpc.Close()
 
 	var eg errgroup.Group
 	eg.Go(func() error {
