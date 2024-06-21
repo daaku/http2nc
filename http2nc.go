@@ -33,36 +33,36 @@ func (w *writer) Write(p []byte) (int, error) {
 
 func DialConnect(w http.ResponseWriter, r *http.Request, addr string) error {
 	if !r.ProtoAtLeast(2, 0) {
-		return errors.New("ssh: must connect using HTTP/2 or higher")
+		return errors.New("http2nc: must connect using HTTP/2 or higher")
 	}
 	wr := newWriter(w)
-	sshConnC, err := net.Dial("tcp", addr)
+	nc, err := net.Dial("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("ssh: %w", err)
+		return fmt.Errorf("http2nc: %w", err)
 	}
-	sshConn := sshConnC.(*net.TCPConn)
-	defer sshConn.Close() // backup close
+	tcpc := nc.(*net.TCPConn)
+	defer tcpc.Close() // backup close
 
 	var eg errgroup.Group
 	eg.Go(func() error {
-		if _, err := io.Copy(sshConn, r.Body); err != nil {
-			sshConn.Close()
-			return fmt.Errorf("ssh: copying data to ssh from http: %w", err)
+		if _, err := io.Copy(tcpc, r.Body); err != nil {
+			tcpc.Close()
+			return fmt.Errorf("http2nc: copying data to net.Conn from http: %w", err)
 		}
-		if err := sshConn.CloseWrite(); err != nil {
-			sshConn.Close()
-			return fmt.Errorf("ssh: CloseWrite of ssh: %w", err)
+		if err := tcpc.CloseWrite(); err != nil {
+			tcpc.Close()
+			return fmt.Errorf("http2nc: CloseWrite of net.Conn: %w", err)
 		}
 		return nil
 	})
 	eg.Go(func() error {
-		if _, err := io.Copy(wr, sshConn); err != nil {
-			sshConn.Close()
-			return fmt.Errorf("ssh: copying data to http from ssh: %w", err)
+		if _, err := io.Copy(wr, tcpc); err != nil {
+			tcpc.Close()
+			return fmt.Errorf("http2nc: copying data to http from net.Conn: %w", err)
 		}
-		if err := sshConn.CloseRead(); err != nil {
-			sshConn.Close()
-			return fmt.Errorf("ssh: CloseRead of ssh: %w", err)
+		if err := tcpc.CloseRead(); err != nil {
+			tcpc.Close()
+			return fmt.Errorf("http2nc: CloseRead of net.Conn: %w", err)
 		}
 		return nil
 	})
