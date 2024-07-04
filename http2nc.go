@@ -31,12 +31,14 @@ func (w *writer) Write(p []byte) (int, error) {
 	return n, err
 }
 
+var dialer net.Dialer
+
 func DialConnect(w http.ResponseWriter, r *http.Request, addr string) error {
 	if !r.ProtoAtLeast(2, 0) {
 		return errors.New("http2nc: must connect using HTTP/2 or higher")
 	}
 	wr := newWriter(w)
-	nc, err := net.Dial("tcp", addr)
+	nc, err := dialer.DialContext(r.Context(), "tcp", addr)
 	if err != nil {
 		return fmt.Errorf("http2nc: %w", err)
 	}
