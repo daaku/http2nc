@@ -36,8 +36,10 @@ var dialer net.Dialer
 func DialConnect(w http.ResponseWriter, r *http.Request, addr string) error {
 	defer r.Body.Close()
 	wr := newWriter(w)
-	if err := wr.rc.EnableFullDuplex(); err != nil {
-		return fmt.Errorf("http2nc: enabling full-duplex: %w", err)
+	if !r.ProtoAtLeast(2, 0) {
+		if err := wr.rc.EnableFullDuplex(); err != nil {
+			return fmt.Errorf("http2nc: enabling full-duplex: %w", err)
+		}
 	}
 	nc, err := dialer.DialContext(r.Context(), "tcp", addr)
 	if err != nil {
