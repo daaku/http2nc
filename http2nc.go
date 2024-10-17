@@ -34,13 +34,13 @@ func (w *writer) Write(p []byte) (int, error) {
 var dialer net.Dialer
 
 func DialConnect(w http.ResponseWriter, r *http.Request, addr string) error {
-	if !r.ProtoAtLeast(2, 0) {
-		return errors.New("http2nc: must connect using HTTP/2 or higher")
-	}
 	wr := newWriter(w)
+	if err := wr.rc.EnableFullDuplex(); err != nil {
+		return fmt.Errorf("http2nc: enabling full-duplex: %w", err)
+	}
 	nc, err := dialer.DialContext(r.Context(), "tcp", addr)
 	if err != nil {
-		return fmt.Errorf("http2nc: %w", err)
+		return fmt.Errorf("http2nc: dialing: %w", err)
 	}
 	tcpc := nc.(*net.TCPConn)
 	defer tcpc.Close()
