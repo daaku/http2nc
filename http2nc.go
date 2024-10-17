@@ -34,6 +34,7 @@ func (w *writer) Write(p []byte) (int, error) {
 var dialer net.Dialer
 
 func DialConnect(w http.ResponseWriter, r *http.Request, addr string) error {
+	defer r.Body.Close()
 	wr := newWriter(w)
 	if err := wr.rc.EnableFullDuplex(); err != nil {
 		return fmt.Errorf("http2nc: enabling full-duplex: %w", err)
